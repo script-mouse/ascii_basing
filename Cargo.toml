@@ -2,6 +2,14 @@
 name = "ascii_basing"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+description = "Functions to create base 62 (ASCII) String representations of integers"
+license = "Apache-2.0"
+authors = ["Benjamin Richcreek <brygidarichcreek@gmail.com>"]
+keywords = ["parsing","string","ascii","encoding","numbers"]
+categories = ["encoding"]
+repository = "https://github.com/script-mouse/ascii_basing"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

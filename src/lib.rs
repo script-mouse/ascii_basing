@@ -15,13 +15,8 @@ limitations under the License.
 */
 //! # 62 Base Converter & Deconverter
 //! Convert your positive [integers](https://doc.rust-lang.org/std/primitive.u32.html) to [ASCII](https://en.wikipedia.org/wiki/ASCII)-safe [`Strings`](https://doc.rust-lang.org/std/string/struct.String.html) for situations where a concise [`String`](https://doc.rust-lang.org/std/string/struct.String.html) representation of an [integer](https://doc.rust-lang.org/std/primitive.u32.html) is desired, such as when automatically generating file names or identifiers.
-//! This library creates output similar to [Base-62](), but the implementation is distinct.
-//! Here are a few of the key differences that affect output:
-//! |Crate Name  |Supports Integers larger than [`u32`](https://doc.rust-lang.org/std/primitive.u32.html)?|
-//! |:----------:|:--------------------------------------------------------------------------------------:|
-//! |ascii_basing|No                                                                                      |
-//! |base-62     |Yes                                                                                     |
-//!
+//! This library creates output similar to [Base-62](), but the implementation is distinct. The main advantage of this library (as of now) is its implementation of the [`Error`](std::error::Error) trait for all error message types and correctly encoding `0` to an empty string, but [base-62] has the advantage of allowing encoding and decoding of unsigned integers in formats other than u32, and being `#![no_std]` crate. In general, it is best to use [base-62]
+//! in `#![no_std]` environments or when large numbers need to be encoded, and to use this library in most other situations.
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Formatter,Display};

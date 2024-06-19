@@ -14,9 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 //! # 62 Base Converter & Deconverter
-//! Convert your positive [integers](https://doc.rust-lang.org/std/primitive.u32.html) to [ASCII](https://en.wikipedia.org/wiki/ASCII)-safe [`Strings`](https://doc.rust-lang.org/std/string/struct.String.html) for situations where a concise [`String`](https://doc.rust-lang.org/std/string/struct.String.html) representation of an [integer](https://doc.rust-lang.org/std/primitive.u32.html) is desired, such as when automatically generating file names or identifiers.
-//! This library creates output similar to [Base-62](), but the implementation is distinct. The main advantage of this library (as of now) is its implementation of the [`Error`](std::error::Error) trait for all error message types and correctly encoding `0` to an empty string, but [base-62] has the advantage of allowing encoding and decoding of unsigned integers in formats other than u32, and being `#![no_std]` crate. In general, it is best to use [base-62]
-//! in `#![no_std]` environments or when large numbers need to be encoded, and to use this library in most other situations.
+//! Convert your positive [integers](https://doc.rust-lang.org/std/primitive.u32.html) to [ASCII](https://en.wikipedia.org/wiki/ASCII)-safe [`Strings`](https://doc.rust-lang.org/std/string/struct.String.html) for situations where a concise [`String`] representation of an [integer](https://doc.rust-lang.org/std/primitive.u32.html) is desired, such as when automatically generating file names or identifiers.
+//!
+//! Each possible integer value is assigned a unique [`String`] representation, allowing for lossless conversion between [`Strings`] and [`u32`] values. Each additional character in a [`String`] representation can be thought of as another digit in a [Base62](https://en.wikipedia.org/wiki/Base62) system - lower values have shorter representations - but thanks to the large amount of values each digit could be, representations (of [32-bit integers](https://doc.rust-lang.org/std/primitive.u32.html)) are never longer than 6 characters long.
+//!
+//! # Example
+//! Let's imagine that you were working on a library that automatically generated identical fields (with different names) in a Rust data structure. In order to support large quantities of fields, large identifiers might form unless the data is encoded. For this example, we'll look at only the largest value you hypothetically need to support, [`u32::MAX`] - or, represented in base 10, `4294967295`. If you needed to limit the size of the identifiers so the data structure could be efficiently parsed and sent online, you would need to encode the data. 
+//! Using this library, you could easily condense `4294967295` down to just
+//! # Alternatives
+//! This library creates output similar to [base-62], but the implementation is distinct. The main advantages of this library (as of now) are encoding `0` to the string `"0"` rather than an empty String, and allowing for users to give [`Option`]al hints about the size of encoded values (which are used to pre-allocate String capacity). [base-62] has the advantage of allowing encoding and decoding of unsigned integers in `&[u8]` format rather than only u32 format. 
+//!
+//! In general, it is best to use [base-62]
+//! when large numbers or byte sequences need to be encoded, and to use this library in most other situations.
+//!
+//![base-62]: https://crates.io/crates/base-62
+//![`Strings`]: https://doc.rust-lang.org/std/string/struct.String.html
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Formatter,Display};
@@ -86,13 +98,13 @@ pub mod decoding {
     }
     impl Error for DecodingError {}
     pub fn decode(mut written: Chars) -> Result<u32,DecodingError> {
-        let mut power: u32 = 1;
+        let mut power: u64 = 1;
         let mut total: u32 = 0;
         while let Some(digit) = written.next_back() {
             if digit.is_ascii_uppercase() {
-                total += (26 + char::to_digit(digit,36).ok_or(DecodingError::new(DECODING_ERROR))?) * power;
+                total += (26 + char::to_digit(digit,36).ok_or(DecodingError::new(DECODING_ERROR))?) * (power as u32);
             } else {
-                total += char::to_digit(digit,36).ok_or(DecodingError::new(DECODING_ERROR))? * power;
+                total += char::to_digit(digit,36).ok_or(DecodingError::new(DECODING_ERROR))? * (power as u32);
             }
             power *= 62;
         }
@@ -101,20 +113,40 @@ pub mod decoding {
 }
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::encoding::*;
     use crate::decoding::*;
     #[test]
-    fn encode_three() {
-        if let Ok(encoded) = encode(199888+558+35,Some(3)) {
-            assert_eq!(encoded,String::from("Q9z"));
+    fn encode_premade() {
+        let numbers = [199888+558+35,0,u32::MAX];
+        let representations = [String::from("Q9z"),String::from("0"),String::from("4GFfc3")];
+        //traditional test, minimum and maximum
+        let mut looper = 0;
+        while looper < numbers.len() {
+            if let Ok(encoded) = encode(numbers[looper],None) {
+                assert_eq!(encoded,representations[looper]);
+                if let Ok(decoded) = decode(encoded.chars()) {
+                    assert_eq!(numbers[looper],decoded);
+                } else {
+                    panic!("encoded value {} didn't decode to the same value it was before encoding",looper);
+                }
+            } else {
+                panic!("the encode function threw an error when it was passed {}, a test case that should've encoded to \"{}\"",numbers[looper],representations[looper]);
+            }
+            looper += 1;
+        }
+    }
+    #[test]
+    fn encode_zero() {
+        if let Ok(encoded) = encode(0,Some(1)) {
+            assert_eq!(encoded,String::from("0"));
             if let Ok(decoded) = decode(encoded.chars()) {
-                assert_eq!(199888+558+35,decoded);
+                assert_eq!(0,decoded);
             } else {
                 panic!("the encoded value didn't decode to the same value it was before encoding");
             }
         } else {
-            panic!("the encode function threw an error when it was passed 200481, a test case that should've encoded to \"Q9z\"");
+            panic!("the encode function threw an error when it was passed 0, a test case that should've encoded to \"0\"");
         }
     }
+        
 }

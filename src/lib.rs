@@ -247,7 +247,7 @@ mod tests {
         let mut representations: Vec<String> = Vec::with_capacity(5 * 2 + 1);
         let mut under = String::with_capacity(5);
         let mut over = String::with_capacity(6);
-        let mut power: u64 = 62;
+        let mut power: u32 = 1;
         over.push('1');
         representations.push(over.clone());
         numbers.push(1);
@@ -258,10 +258,10 @@ mod tests {
                     numbers.push(62);
                 },
                 _ => {
-                    let new_value = numbers.get(numbers.len() - 2).expect("There's an issue with the automatic generation of values for this test") + 61 * (power as u32);
+                    power *= 62;
+                    let new_value = numbers.get(numbers.len() - 2).expect("There's an issue with the automatic generation of values for this test") + 61 * power;
                     numbers.push(new_value);
                     numbers.push(new_value + 1);
-                    power *=  62;
                 },
             }
             under.push('Z');
